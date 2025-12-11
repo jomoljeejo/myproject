@@ -1,10 +1,8 @@
-# todoapp/controller.py
+
 from rest_framework.decorators import api_view
 from todoapp import views
 
-# -----------------------------
-# APPLY @api_view DIRECTLY HERE
-# -----------------------------
+
 
 @api_view(['POST'])
 def create_todo(request):
