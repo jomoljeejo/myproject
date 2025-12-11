@@ -1,17 +1,12 @@
 from rest_framework import serializers
-from todoapp.dataclass.request.update import TodoUpdateDTO
 
-class TodoUpdateRequestSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+class UpdateTodoSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=255, required=False)
-    description = serializers.CharField(allow_blank=True, required=False)
+    description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     is_done = serializers.BooleanField(required=False)
 
-def to_update_dto(serializer: TodoUpdateRequestSerializer) -> TodoUpdateDTO:
-    d = serializer.validated_data
-    return TodoUpdateDTO(
-        id=d["id"],
-        title=d.get("title"),
-        description=d.get("description"),
-        is_done=d.get("is_done"),
-    )
+    def validate(self, attrs):
+        # ensure at least one updatable field present
+        if not attrs:
+            raise serializers.ValidationError("At least one field must be provided for update.")
+        return attrs

@@ -1,15 +1,16 @@
+# todoapp/serializer/request/create.py
 from rest_framework import serializers
-from todoapp.dataclass.request.create import TodoCreateDTO
 
-class TodoCreateRequestSerializer(serializers.Serializer):
+class CreateTodoSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=255)
-    description = serializers.CharField(allow_blank=True, required=False)
+    description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     is_done = serializers.BooleanField(required=False, default=False)
 
-def to_create_dto(serializer: TodoCreateRequestSerializer) -> TodoCreateDTO:
-    d = serializer.validated_data
-    return TodoCreateDTO(
-        title=d["title"],
-        description=d.get("description", "") or "",
-        is_done=d.get("is_done", False),
-    )
+    def validate_title(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("title cannot be blank")
+        return value
+
+    def create(self, validated_data):
+        # optional convenience: return validated_data or create model instance
+        return validated_data

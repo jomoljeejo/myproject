@@ -7,3 +7,6 @@ class TodoUpdateDTO:
     title: Optional[str] = None
     description: Optional[str] = None
     is_done: Optional[bool] = None
+
+    class Meta:
+        table_name = "todo"

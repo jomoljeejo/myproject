@@ -1,17 +1,11 @@
 from rest_framework import serializers
-from todoapp.dataclass.request.partial_update import TodoPartialUpdateDTO
 
-class TodoPartialUpdateRequestSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+class PartialUpdateTodoSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=255, required=False)
-    description = serializers.CharField(allow_blank=True, required=False)
+    description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     is_done = serializers.BooleanField(required=False)
 
-def to_partial_update_dto(serializer: TodoPartialUpdateRequestSerializer) -> TodoPartialUpdateDTO:
-    d = serializer.validated_data
-    return TodoPartialUpdateDTO(
-        id=d["id"],
-        title=d.get("title"),
-        description=d.get("description"),
-        is_done=d.get("is_done"),
-    )
+    def validate(self, attrs):
+        if not attrs:
+            raise serializers.ValidationError("At least one field must be provided for partial update.")
+        return attrs

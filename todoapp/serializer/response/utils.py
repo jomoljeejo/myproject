@@ -1,9 +1,9 @@
-from dataclasses import asdict, is_dataclass
-from typing import Any
+from rest_framework import serializers
 
-def dataclass_to_primitive(obj: Any) -> Any:
-    if is_dataclass(obj):
-        return asdict(obj)
-    if isinstance(obj, list):
-        return [dataclass_to_primitive(x) for x in obj]
-    return obj
+class PaginationSerializer(serializers.Serializer):
+    page_num = serializers.IntegerField()
+    limit = serializers.IntegerField()
+    total_page = serializers.IntegerField()
+    total_count = serializers.IntegerField()
+    next_page_required = serializers.BooleanField()
+    present_url = serializers.CharField()

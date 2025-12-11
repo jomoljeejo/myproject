@@ -4,3 +4,5 @@ from dataclasses import dataclass
 class TodoRetrieveDTO:
     id: int
 
+    class Meta:
+        table_name = "todo"

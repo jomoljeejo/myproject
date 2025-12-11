@@ -2,9 +2,10 @@ from dataclasses import dataclass
 from typing import Optional
 
 @dataclass
-class TodoListQueryDTO:
+class TodoListDTO:
+    page_num: int
+    limit: int
     search: Optional[str] = None
-    is_done: Optional[bool] = None
-    limit: int = 100
-    offset: int = 0
 
+    class Meta:
+        table_name = "todo"

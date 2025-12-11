@@ -1,5 +1,17 @@
-from .todo_detail import TodoResponseSerializer
-from .todo_list import TodoListResponseSerializer
-from .utils import dataclass_to_primitive
+# todoapp/serializer/response/__init__.py
+# Re-export response serializers using the names other modules expect.
 
-__all__ = ["TodoResponseSerializer", "TodoListResponseSerializer", "dataclass_to_primitive"]
+# todo_detail.py defines TodoResponseSerializer (non-ModelSerializer).
+# Alias it here so imports that expect TodoDetailSerializer continue to work.
+from .todo_detail import TodoResponseSerializer as TodoDetailSerializer
+
+from .todo_list import TodoListItemSerializer
+from .utils import PaginationSerializer
+
+__all__ = [
+    "TodoDetailSerializer",
+    "TodoListItemSerializer",
+    "PaginationSerializer",
+]
+
+
