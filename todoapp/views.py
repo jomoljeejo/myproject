@@ -1,14 +1,17 @@
+# todoapp/views.py
 from django.db import transaction
-from django.core.paginator import Paginator
-from rest_framework import status
 from rest_framework.response import Response
+from rest_framework import status
+from django.core.paginator import Paginator
+from django.db.models import Q
 
-from todoapp.dataclass.request.create import TodoCreateDTO
-from todoapp.dataclass.request.retrieve import TodoRetrieveDTO
 from todoapp.model.model import Todo
+from todoapp.serializer.response.todo_detail import TodoResponseSerializer
+from todoapp.serializer.response.todo_list import TodoListItemSerializer
 
 
 class TodoView:
+
     def __init__(self):
         self.data_created = "Todo created successfully."
         self.data_updated = "Todo updated successfully."
@@ -16,92 +19,101 @@ class TodoView:
         self.data_fetched = "Todo fetched successfully."
         self.multi_data_fetched = "Todos fetched successfully."
 
-    # ========================================================================
-    # CREATE
-    # ========================================================================
-    def create_extract(self, params: TodoCreateDTO, token_payload):
+    # ----------------------------- CREATE -----------------------------
+    def create_extract(self, params, token_payload):
         with transaction.atomic():
-            Todo.create_todo(
+            todo = Todo.objects.create(
                 title=params.title,
                 description=params.description,
-                is_done=params.is_done      # <-- FIXED
+                is_done=params.is_done
             )
 
-        return Response(
-            {"success": True, "message": self.data_created},
-            status=status.HTTP_201_CREATED
-        )
+        return Response({
+            "success": True,
+            "message": self.data_created,
+            "data": TodoResponseSerializer(todo).data
+        }, status=status.HTTP_201_CREATED)
 
-    # ========================================================================
-    # RETRIEVE
-    # ========================================================================
-    def get_extract(self, params: TodoRetrieveDTO, token_payload):
-        obj = Todo.get_todo(id=params.id)
-
-        from todoapp.serializer.response.todo_detail import TodoResponseSerializer
+    # ----------------------------- RETRIEVE -----------------------------
+    def get_extract(self, params, token_payload):
+        try:
+            todo = Todo.objects.get(id=params.id)
+        except Todo.DoesNotExist:
+            return Response({"success": False, "message": "Todo not found"}, status=404)
 
         return Response({
             "success": True,
             "message": self.data_fetched,
-            "data": TodoResponseSerializer(obj).data     # <-- Correct response serializer
-        }, status=200)
+            "data": TodoResponseSerializer(todo).data
+        })
 
-    # ========================================================================
-    # LIST ALL
-    # ========================================================================
+    # ----------------------------- LIST -----------------------------
     def get_all_extract(self, params, token_payload):
-        all_objs = Todo.list_todos()
 
-        paginator = Paginator(all_objs, params.limit)
+        qs = Todo.objects.all().order_by("-created_at")
 
-        if paginator.num_pages > 0 and params.page_num > paginator.num_pages:
-            return Response({"success": False, "message": "Page number exceeded"}, status=400)
+        if params.search:
+            qs = qs.filter(
+                Q(title__icontains=params.search) |
+                Q(description__icontains=params.search)
+            )
 
-        page_obj = paginator.page(params.page_num)
+        paginator = Paginator(qs, params.limit)
+        page = paginator.page(params.page_num)
 
-        from todoapp.serializer.response.todo_list import TodoListItemSerializer
-
-        serialized_data = TodoListItemSerializer(page_obj.object_list, many=True).data
+        items = TodoListItemSerializer(page.object_list, many=True).data
 
         return Response({
             "success": True,
             "message": self.multi_data_fetched,
             "data": {
-                "results": serialized_data,
-                "page": params.page_num,
-                "total_pages": paginator.num_pages,
-                "total_count": paginator.count,
+                "meta": {
+                    "page_num": params.page_num,
+                    "limit": params.limit,
+                    "total": paginator.count,
+                    "total_pages": paginator.num_pages
+                },
+                "items": items
             }
-        }, status=200)
+        })
 
-    # ========================================================================
-    # UPDATE (PUT / PATCH)
-    # ========================================================================
+    # ----------------------------- UPDATE (PUT/PATCH) -----------------------------
     def update_extract(self, params, token_payload):
-        with transaction.atomic():
-            update_fields = {
-                k: v for k, v in {
-                    "title": getattr(params, "title", None),
-                    "description": getattr(params, "description", None),
-                    "is_done": getattr(params, "is_done", None)   # <-- FIXED
-                }.items() if v is not None
-            }
+        try:
+            todo = Todo.objects.get(id=params.id)
+        except Todo.DoesNotExist:
+            return Response({"success": False, "message": "Todo not found"}, status=404)
 
-            Todo.update_todo(id=params.id, fields=update_fields)
+        update_fields = {}
 
-        return Response(
-            {"success": True, "message": self.data_updated},
-            status=200
-        )
+        if hasattr(params, "title"):
+            update_fields["title"] = params.title
 
-    # ========================================================================
-    # DELETE
-    # ========================================================================
+        if hasattr(params, "description"):
+            update_fields["description"] = params.description
+
+        if hasattr(params, "is_done"):
+            update_fields["is_done"] = params.is_done
+
+        for k, v in update_fields.items():
+            setattr(todo, k, v)
+
+        todo.save()
+
+        return Response({
+            "success": True,
+            "message": self.data_updated,
+            "data": TodoResponseSerializer(todo).data
+        })
+
+    # ----------------------------- DELETE MANY -----------------------------
     def delete_many_extract(self, params, token_payload):
-        with transaction.atomic():
-            Todo.delete_many_todos(ids=params.ids)
+        ids = params.ids
 
-        return Response(
-            {"success": True, "message": self.data_deleted},
-            status=200
-        )
+        deleted, _ = Todo.objects.filter(id__in=ids).delete()
+
+        return Response({
+            "success": True,
+            "message": self.data_deleted,
+            "data": {"deleted_count": deleted}
+        })

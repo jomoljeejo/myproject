@@ -1,12 +1,12 @@
-# todoapp/urls.py
 from django.urls import path
 from todoapp import controller
 
 urlpatterns = [
-    path('todo/create/', controller.todo_create, name='todo-create'),
-    path('todo/<int:pk>/', controller.todo_retrieve, name='todo-get'),
-    path('todo/<int:pk>/update/', controller.todo_update, name='todo-update'),
-    path('todo/<int:pk>/partial-update/', controller.todo_partial_update, name='todo-partial-update'),
-    path('todo/delete-many/', controller.todo_delete_many, name='todo-delete-many'),
-    path('todo/', controller.todo_list, name='todo-list'),
+    path('todos/', controller.list_todos, name='list_todos'),
+    path('todos/create/', controller.create_todo, name='create_todo'),
+    path('todos/<int:pk>/', controller.retrieve_todo, name='retrieve_todo'),
+    path('todos/<int:pk>/update/', controller.update_todo, name='update_todo'),
+    path('todos/<int:pk>/delete/', controller.delete_todo, name='delete_todo'),
 ]
+
+
