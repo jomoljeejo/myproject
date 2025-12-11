@@ -59,9 +59,9 @@ class TodoView:
 
         page_obj = paginator.page(params.page_num)
 
-        from todoapp.serializer.response.todo_list import TodoListResponseSerializer
+        from todoapp.serializer.response.todo_list import TodoListItemSerializer
 
-        serialized_data = TodoListResponseSerializer(page_obj.object_list, many=True).data
+        serialized_data = TodoListItemSerializer(page_obj.object_list, many=True).data
 
         return Response({
             "success": True,
