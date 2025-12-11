@@ -1,119 +1,69 @@
 # todoapp/views.py
-from django.db import transaction
 from rest_framework.response import Response
 from rest_framework import status
-from django.core.paginator import Paginator
-from django.db.models import Q
+from django.shortcuts import get_object_or_404
 
 from todoapp.model.model import Todo
-from todoapp.serializer.response.todo_detail import TodoResponseSerializer
-from todoapp.serializer.response.todo_list import TodoListItemSerializer
+from todoapp.serializer.request import (
+    CreateTodoSerializer,
+    UpdateTodoSerializer,
+    PartialUpdateTodoSerializer,
+)
 
+def create_todo(request):
+    serializer = CreateTodoSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    todo = Todo.objects.create(**serializer.validated_data)
+    return Response({
+        "id": todo.id,
+        "title": todo.title,
+        "description": todo.description,
+        "is_done": todo.is_done,
+    }, status=status.HTTP_201_CREATED)
 
-class TodoView:
+def list_todos(request):
+    todos = Todo.objects.all().order_by('id')
+    return Response([
+        {
+            "id": t.id,
+            "title": t.title,
+            "description": t.description,
+            "is_done": t.is_done,
+        }
+        for t in todos
+    ], status=status.HTTP_200_OK)
 
-    def __init__(self):
-        self.data_created = "Todo created successfully."
-        self.data_updated = "Todo updated successfully."
-        self.data_deleted = "Todo(s) deleted successfully."
-        self.data_fetched = "Todo fetched successfully."
-        self.multi_data_fetched = "Todos fetched successfully."
+def retrieve_todo(request, pk):
+    todo = get_object_or_404(Todo, pk=pk)
+    return Response({
+        "id": todo.id,
+        "title": todo.title,
+        "description": todo.description,
+        "is_done": todo.is_done,
+    }, status=status.HTTP_200_OK)
 
-    # ----------------------------- CREATE -----------------------------
-    def create_extract(self, params, token_payload):
-        with transaction.atomic():
-            todo = Todo.objects.create(
-                title=params.title,
-                description=params.description,
-                is_done=params.is_done
-            )
+def update_todo(request, pk):
+    todo = get_object_or_404(Todo, pk=pk)
 
-        return Response({
-            "success": True,
-            "message": self.data_created,
-            "data": TodoResponseSerializer(todo).data
-        }, status=status.HTTP_201_CREATED)
+    if request.method == "PUT":
+        serializer = UpdateTodoSerializer(data=request.data)
+    else:
+        serializer = PartialUpdateTodoSerializer(data=request.data, partial=True)
 
-    # ----------------------------- RETRIEVE -----------------------------
-    def get_extract(self, params, token_payload):
-        try:
-            todo = Todo.objects.get(id=params.id)
-        except Todo.DoesNotExist:
-            return Response({"success": False, "message": "Todo not found"}, status=404)
+    serializer.is_valid(raise_exception=True)
 
-        return Response({
-            "success": True,
-            "message": self.data_fetched,
-            "data": TodoResponseSerializer(todo).data
-        })
+    for field, value in serializer.validated_data.items():
+        setattr(todo, field, value)
+    todo.save()
 
-    # ----------------------------- LIST -----------------------------
-    def get_all_extract(self, params, token_payload):
+    return Response({
+        "id": todo.id,
+        "title": todo.title,
+        "description": todo.description,
+        "is_done": todo.is_done,
+    }, status=status.HTTP_200_OK)
 
-        qs = Todo.objects.all().order_by("-created_at")
-
-        if params.search:
-            qs = qs.filter(
-                Q(title__icontains=params.search) |
-                Q(description__icontains=params.search)
-            )
-
-        paginator = Paginator(qs, params.limit)
-        page = paginator.page(params.page_num)
-
-        items = TodoListItemSerializer(page.object_list, many=True).data
-
-        return Response({
-            "success": True,
-            "message": self.multi_data_fetched,
-            "data": {
-                "meta": {
-                    "page_num": params.page_num,
-                    "limit": params.limit,
-                    "total": paginator.count,
-                    "total_pages": paginator.num_pages
-                },
-                "items": items
-            }
-        })
-
-    # ----------------------------- UPDATE (PUT/PATCH) -----------------------------
-    def update_extract(self, params, token_payload):
-        try:
-            todo = Todo.objects.get(id=params.id)
-        except Todo.DoesNotExist:
-            return Response({"success": False, "message": "Todo not found"}, status=404)
-
-        update_fields = {}
-
-        if hasattr(params, "title"):
-            update_fields["title"] = params.title
-
-        if hasattr(params, "description"):
-            update_fields["description"] = params.description
-
-        if hasattr(params, "is_done"):
-            update_fields["is_done"] = params.is_done
-
-        for k, v in update_fields.items():
-            setattr(todo, k, v)
-
-        todo.save()
-
-        return Response({
-            "success": True,
-            "message": self.data_updated,
-            "data": TodoResponseSerializer(todo).data
-        })
-
-    # ----------------------------- DELETE MANY -----------------------------
-    def delete_many_extract(self, params, token_payload):
-        ids = params.ids
-
-        deleted, _ = Todo.objects.filter(id__in=ids).delete()
-
-        return Response({
-            "success": True,
-            "message": self.data_deleted,
-            "data": {"deleted_count": deleted}
-        })
+def delete_todo(request, pk):
+    todo = get_object_or_404(Todo, pk=pk)
+    todo.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
