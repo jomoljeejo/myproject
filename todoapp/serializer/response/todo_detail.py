@@ -1,11 +1,20 @@
-# todoapp/serializer/response/todo_detail.py
-from rest_framework import serializers
 
-class TodoResponseSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    title = serializers.CharField()
-    description = serializers.CharField(allow_blank=True, allow_null=True)
-    is_done = serializers.BooleanField()
-    created_at = serializers.DateTimeField()
-    updated_at = serializers.DateTimeField()
 
+class TodoDetailResponseSerializer:
+    """
+    Converts Todo model object into API response structure
+    """
+
+    @staticmethod
+    def serialize(obj):
+        return {
+            "tableName": obj.table_name,
+            "tableCode": obj.table_code,
+            "tableDescription": obj.table_description,
+            "createdDateTime": obj.created_datetime,
+            "isActive": obj.is_active,
+            "createdBy": obj.created_by,
+            "createdBranch": obj.created_branch,
+            "createdByCode": obj.created_by_code,
+            "createdBranchCode": obj.created_branch_code,
+        }
