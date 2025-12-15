@@ -1,20 +1,23 @@
-
-
 class TodoDetailResponseSerializer:
     """
-    Converts Todo model object into API response structure
+    Converts Todo model object into standard API response structure
+    (Derived from existing Todo fields)
     """
 
     @staticmethod
     def serialize(obj):
         return {
-            "tableName": obj.table_name,
-            "tableCode": obj.table_code,
-            "tableDescription": obj.table_description,
-            "createdDateTime": obj.created_datetime,
-            "isActive": obj.is_active,
-            "createdBy": obj.created_by,
-            "createdBranch": obj.created_branch,
-            "createdByCode": obj.created_by_code,
-            "createdBranchCode": obj.created_branch_code,
+            # Derived / mapped fields
+            "tableName": obj.title,                         # from title
+            "tableCode": f"TODO-{obj.id}",                  # derived
+            "tableDescription": obj.description,            # from description
+
+            "createdDateTime": obj.created_at,              # from created_at
+            "isActive": not obj.is_done,                    # logical mapping
+
+            # Metadata (not in model → derived / static / null)
+            "createdBy": "System",                           # default
+            "createdBranch": None,
+            "createdByCode": "SYS",
+            "createdBranchCode": None,
         }

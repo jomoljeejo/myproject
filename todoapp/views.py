@@ -9,6 +9,7 @@ from todoapp.serializer.request import (
     UpdateTodoSerializer,
     PartialUpdateTodoSerializer,
 )
+from todoapp.serializer.response.todo_detail import TodoDetailResponseSerializer
 
 
 def create_todo(request):
@@ -20,12 +21,7 @@ def create_todo(request):
 
     todo = Todo.objects.create(**serializer.validated_data)
 
-    data = {
-        "id": todo.id,
-        "title": todo.title,
-        "description": todo.description,
-        "is_done": todo.is_done,
-    }
+    data = TodoDetailResponseSerializer.serialize(todo)
 
     return Response(
         Utils.success_response(
@@ -40,13 +36,8 @@ def list_todos(request):
     todos = Todo.objects.all().order_by("id")
 
     data = [
-        {
-            "id": t.id,
-            "title": t.title,
-            "description": t.description,
-            "is_done": t.is_done,
-        }
-        for t in todos
+        TodoDetailResponseSerializer.serialize(todo)
+        for todo in todos
     ]
 
     return Response(
@@ -61,12 +52,7 @@ def list_todos(request):
 def retrieve_todo(request, pk):
     todo = get_object_or_404(Todo, pk=pk)
 
-    data = {
-        "id": todo.id,
-        "title": todo.title,
-        "description": todo.description,
-        "is_done": todo.is_done,
-    }
+    data = TodoDetailResponseSerializer.serialize(todo)
 
     return Response(
         Utils.success_response(
@@ -96,12 +82,7 @@ def update_todo(request, pk):
         setattr(todo, field, value)
     todo.save()
 
-    data = {
-        "id": todo.id,
-        "title": todo.title,
-        "description": todo.description,
-        "is_done": todo.is_done,
-    }
+    data = TodoDetailResponseSerializer.serialize(todo)
 
     return Response(
         Utils.success_response(
