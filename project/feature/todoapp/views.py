@@ -12,9 +12,7 @@ from project.feature.todoapp.serializer.request import (
 from project.feature.todoapp.serializer.response.todo_detail import TodoDetailResponseSerializer
 
 
-# -------------------------
-# CREATE
-# -------------------------
+
 def create_todo(request):
     serializer = CreateTodoSerializer(data=request.data)
 
@@ -35,9 +33,7 @@ def create_todo(request):
     )
 
 
-# -------------------------
-# LIST
-# -------------------------
+
 def list_todos(request):
     todos = Todo.objects.all().order_by("id")
 
@@ -55,9 +51,7 @@ def list_todos(request):
     )
 
 
-# -------------------------
-# RETRIEVE (tableCode)
-# -------------------------
+
 def retrieve_todo(request):
     table_code = request.GET.get("tableCode")
 
@@ -94,9 +88,7 @@ def retrieve_todo(request):
     )
 
 
-# -------------------------
-# UPDATE (tableCode)
-# -------------------------
+
 def update_todo(request):
     table_code = request.GET.get("tableCode")
 
@@ -147,9 +139,7 @@ def update_todo(request):
     )
 
 
-# -------------------------
-# DELETE (tableCode)
-# -------------------------
+
 def delete_todo(request):
     table_code = request.GET.get("tableCode")
 
