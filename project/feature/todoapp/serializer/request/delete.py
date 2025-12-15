@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from todoapp.dataclass.request.delete import TodoDeleteDTO
+from project.feature.todoapp.dataclass.request.delete import TodoDeleteDTO
 
 class TodoDeleteRequestSerializer(serializers.Serializer):
     id = serializers.IntegerField()
