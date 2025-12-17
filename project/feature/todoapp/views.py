@@ -1,6 +1,7 @@
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
+from django.core.paginator import Paginator
 
 from common.utilities import Utils
 from project.feature.todoapp.model.model import Todo
@@ -9,8 +10,9 @@ from project.feature.todoapp.serializer.request import (
     UpdateTodoSerializer,
     PartialUpdateTodoSerializer,
 )
-from project.feature.todoapp.serializer.response.todo_detail import TodoDetailResponseSerializer
-
+from project.feature.todoapp.serializer.response.todo_detail import (
+    TodoDetailResponseSerializer
+)
 
 
 def create_todo(request):
@@ -33,23 +35,38 @@ def create_todo(request):
     )
 
 
-
 def list_todos(request):
-    todos = Todo.objects.all().order_by("id")
+    # 🔹 get pagination params
+    query_params = Utils.get_query_params(request)
+    page_num = int(query_params.get("page_num", 1))
+    limit = int(query_params.get("limit", 10))
+
+    queryset = Todo.objects.all().order_by("id")
+
+    paginator = Paginator(queryset, limit)
+    page = paginator.get_page(page_num)
 
     data = [
         TodoDetailResponseSerializer.serialize(todo)
-        for todo in todos
+        for todo in page.object_list
     ]
+
+    paginated_data = Utils.add_page_parameter(
+        final_data=data,
+        page_num=page.number,
+        total_page=paginator.num_pages,
+        total_count=paginator.count,
+        present_url=request.get_full_path(),
+        next_page_required=True
+    )
 
     return Response(
         Utils.success_response(
             message="Todos fetched successfully",
-            data=data
+            data=paginated_data
         ),
         status=status.HTTP_200_OK
     )
-
 
 
 def retrieve_todo(request):
@@ -86,7 +103,6 @@ def retrieve_todo(request):
         ),
         status=status.HTTP_200_OK
     )
-
 
 
 def update_todo(request):
@@ -137,7 +153,6 @@ def update_todo(request):
         ),
         status=status.HTTP_200_OK
     )
-
 
 
 def delete_todo(request):
