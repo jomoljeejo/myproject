@@ -38,8 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'project.feature.todoapp',
-    'project.feature.musicapp',
+    'feature.todoapp',
+    'feature.musicapp',
 
 ]
 

@@ -1,7 +1,7 @@
 from django.urls import path, include
 
 urlpatterns = [
-    path('api/todo/', include('project.feature.todoapp.urls')),
-    path("api/music/", include("project.feature.musicapp.urls")),
+    path('api/todo/', include('feature.todoapp.urls')),
+    path("api/music/", include("feature.musicapp.urls")),
 ]
 
