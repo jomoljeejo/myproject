@@ -1,204 +1,110 @@
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import status
-from django.core.paginator import Paginator
 
-from feature.common.utilities import Utils
 from feature.todoapp.model.model import Todo
-from feature.todoapp.serializer.request import (
-    CreateTodoSerializer,
-    UpdateTodoSerializer,
-    PartialUpdateTodoSerializer,
-)
-from feature.todoapp.serializer.response.todo_detail import (
-    TodoDetailResponseSerializer
-)
+from feature.common.utilities import Utils
 
 
 class TodoView:
 
-    # ========================= CREATE =========================
-    def create(self, request):
-        serializer = CreateTodoSerializer(data=request.data)
-        validation = Utils.validate(serializer)
-        if validation is not True:
-            return validation
 
-        todo = Todo.create(**serializer.validated_data)
-
-        data = TodoDetailResponseSerializer.serialize(todo)
+    def create(self, data: dict):
+        todo = Todo.objects.create(
+            title=data["title"],
+            description=data.get("description", "")
+        )
 
         return Response(
             Utils.success_response(
                 message="Todo created successfully",
-                data=data
+                data={"id": todo.id}
             ),
             status=status.HTTP_201_CREATED
         )
 
-    # ========================= LIST =========================
-    def list_todo(self, request):
-        query_params = Utils.get_query_params(request)
-        page_num = int(query_params.get("page_num", 1))
-        limit = int(query_params.get("limit", 10))
+    def list_todo(self, data: dict):
+        page_num = data["page_num"]
+        limit = data["limit"]
+        search = data.get("search")
 
-        qs = Todo.get_all()
+        queryset = Todo.objects.all().order_by("-id")
 
-        paginator = Paginator(qs, limit)
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) |
+                Q(description__icontains=search)
+            )
+
+        paginator = Paginator(queryset, limit)
         page = paginator.get_page(page_num)
 
-        data = [
-            TodoDetailResponseSerializer.serialize(todo)
-            for todo in page.object_list
+        items = [
+            {
+                "id": todo.id,
+                "title": todo.title,
+                "description": todo.description,
+                "is_done": todo.is_done
+            }
+            for todo in page
         ]
 
-        paginated_data = Utils.add_page_parameter(
-            final_data=data,
-            page_num=page.number,
-            total_page=paginator.num_pages,
-            total_count=paginator.count,
-            present_url=request.get_full_path(),
-            next_page_required=True
-        )
-
         return Response(
             Utils.success_response(
-                message="Todos fetched successfully",
-                data=paginated_data
+                message="Todo list fetched successfully",
+                data={
+                    "items": items,
+                    "total": paginator.count,
+                    "page": page_num,
+                    "limit": limit
+                }
             ),
             status=status.HTTP_200_OK
         )
 
-    # ========================= RETRIEVE =========================
-    def retrieve(self, request):
-        table_code = request.GET.get("tableCode")
 
-        if not table_code:
-            return Response(
-                Utils.error_response(
-                    message="tableCode is required",
-                    error="Missing query parameter: tableCode"
-                ),
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            todo_id = int(table_code.split("-")[-1])
-        except (ValueError, AttributeError):
-            return Response(
-                Utils.error_response(
-                    message="Invalid tableCode format",
-                    error="Expected format: TODO-<id>"
-                ),
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        todo = Todo.get_one(todo_id)
-        if not todo:
-            return Response(
-                Utils.error_response(
-                    message="Todo not found",
-                    error=f"id {todo_id} does not exist"
-                ),
-                status=status.HTTP_200_OK
-            )
-
-        data = TodoDetailResponseSerializer.serialize(todo)
+    def retrieve(self, data: dict):
+        todo = get_object_or_404(Todo, id=data["id"])
 
         return Response(
             Utils.success_response(
-                message="Data fetched successfully",
-                data=data
+                message="Todo fetched successfully",
+                data={
+                    "id": todo.id,
+                    "title": todo.title,
+                    "description": todo.description,
+                    "is_done": todo.is_done
+                }
             ),
             status=status.HTTP_200_OK
         )
 
-    # ========================= UPDATE =========================
-    def update(self, request):
-        table_code = request.GET.get("tableCode")
 
-        if not table_code:
-            return Response(
-                Utils.error_response(
-                    message="tableCode is required",
-                    error="Missing query parameter: tableCode"
-                ),
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    def update(self, data: dict):
+        todo_id = data["id"]
+        todo = get_object_or_404(Todo, id=todo_id)
 
-        try:
-            todo_id = int(table_code.split("-")[-1])
-        except (ValueError, AttributeError):
-            return Response(
-                Utils.error_response(
-                    message="Invalid tableCode format",
-                    error="Expected format: TODO-<id>"
-                ),
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        if "title" in data:
+            todo.title = data["title"]
+        if "description" in data:
+            todo.description = data["description"]
+        if "is_done" in data:
+            todo.is_done = data["is_done"]
 
-        serializer = (
-            UpdateTodoSerializer(data=request.data)
-            if request.method == "PUT"
-            else PartialUpdateTodoSerializer(data=request.data, partial=True)
-        )
-
-        validation = Utils.validate(serializer)
-        if validation is not True:
-            return validation
-
-        todo = Todo.update(todo_id, **serializer.validated_data)
-        if not todo:
-            return Response(
-                Utils.error_response(
-                    message="Todo not found",
-                    error=f"id {todo_id} does not exist"
-                ),
-                status=status.HTTP_200_OK
-            )
-
-        data = TodoDetailResponseSerializer.serialize(todo)
+        todo.save()
 
         return Response(
             Utils.success_response(
-                message="Todo updated successfully",
-                data=data
+                message="Todo updated successfully"
             ),
             status=status.HTTP_200_OK
         )
 
-    # ========================= DELETE =========================
-    def delete(self, request):
-        table_code = request.GET.get("tableCode")
-
-        if not table_code:
-            return Response(
-                Utils.error_response(
-                    message="tableCode is required",
-                    error="Missing query parameter: tableCode"
-                ),
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            todo_id = int(table_code.split("-")[-1])
-        except (ValueError, AttributeError):
-            return Response(
-                Utils.error_response(
-                    message="Invalid tableCode format",
-                    error="Expected format: TODO-<id>"
-                ),
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        success = Todo.delete_one(todo_id)
-        if not success:
-            return Response(
-                Utils.error_response(
-                    message="Todo not found",
-                    error=f"id {todo_id} does not exist"
-                ),
-                status=status.HTTP_200_OK
-            )
+    def delete(self, data: dict):
+        todo = get_object_or_404(Todo, id=data["id"])
+        todo.delete()
 
         return Response(
             Utils.success_response(

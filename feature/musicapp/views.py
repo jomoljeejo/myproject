@@ -28,12 +28,11 @@ class MusicView:
 
 
     def list_music(self, request):
-        params = Utils.get_query_params(request)
-        page_num = int(params.get("page_num", 1))
-        limit = int(params.get("limit", 10))
+        data = request.validated_data
+        page_num = data["page_num"]
+        limit = data["limit"]
 
         queryset = Music.get_all()
-
         paginator = Paginator(queryset, limit)
 
         try:
@@ -61,29 +60,16 @@ class MusicView:
 
 
     def retrieve(self, request):
-        table_code = request.GET.get("tableCode")
-
-        if not table_code:
-            return Response(
-                Utils.error_response("tableCode is required"),
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            music_id = int(table_code.split("-")[-1])
-        except (ValueError, AttributeError):
-            return Response(
-                Utils.error_response(
-                    "Invalid tableCode format", "Expected format: MUSIC-<id>"
-                ),
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        music_id = self._get_music_id(request)
+        if isinstance(music_id, Response):
+            return music_id
 
         music = Music.get_one(music_id)
         if not music:
             return Response(
                 Utils.error_response(
-                    "Music not found", f"id {music_id} does not exist"
+                    "Music not found",
+                    f"id {music_id} does not exist"
                 ),
                 status=status.HTTP_200_OK
             )
@@ -98,29 +84,16 @@ class MusicView:
 
 
     def update(self, request):
-        table_code = request.GET.get("tableCode")
-
-        if not table_code:
-            return Response(
-                Utils.error_response("tableCode is required"),
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            music_id = int(table_code.split("-")[-1])
-        except (ValueError, AttributeError):
-            return Response(
-                Utils.error_response(
-                    "Invalid tableCode format", "Expected format: MUSIC-<id>"
-                ),
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        music_id = self._get_music_id(request)
+        if isinstance(music_id, Response):
+            return music_id
 
         music = Music.update(music_id, **request.validated_data)
         if not music:
             return Response(
                 Utils.error_response(
-                    "Music not found", f"id {music_id} does not exist"
+                    "Music not found",
+                    f"id {music_id} does not exist"
                 ),
                 status=status.HTTP_200_OK
             )
@@ -133,36 +106,44 @@ class MusicView:
             status=status.HTTP_200_OK
         )
 
-    # ========================= DELETE =========================
+
     def delete(self, request):
-        table_code = request.GET.get("tableCode")
-
-        if not table_code:
-            return Response(
-                Utils.error_response("tableCode is required"),
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            music_id = int(table_code.split("-")[-1])
-        except (ValueError, AttributeError):
-            return Response(
-                Utils.error_response(
-                    "Invalid tableCode format", "Expected format: MUSIC-<id>"
-                ),
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        music_id = self._get_music_id(request)
+        if isinstance(music_id, Response):
+            return music_id
 
         success = Music.delete_one(music_id)
         if not success:
             return Response(
                 Utils.error_response(
-                    "Music not found", f"id {music_id} does not exist"
+                    "Music not found",
+                    f"id {music_id} does not exist"
                 ),
                 status=status.HTTP_200_OK
             )
 
         return Response(
-            Utils.success_response("Music deleted successfully"),
+            Utils.success_response(
+                message="Music deleted successfully"
+            ),
             status=status.HTTP_200_OK
         )
+
+
+    def _get_music_id(self, request):
+        """
+        Extracts and validates music id from validated tableCode.
+        Expected format: MUSIC-<id>
+        """
+        table_code = request.validated_data.get("tableCode")
+
+        try:
+            return int(table_code.split("-")[-1])
+        except (ValueError, AttributeError):
+            return Response(
+                Utils.error_response(
+                    "Invalid tableCode format",
+                    "Expected format: MUSIC-<id>"
+                ),
+                status=status.HTTP_400_BAD_REQUEST
+            )

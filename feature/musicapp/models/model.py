@@ -17,22 +17,22 @@ class Music(models.Model):
     def __str__(self):
         return f"{self.title} - {self.artist}"
 
-    # ========================= CREATE =========================
+
     @staticmethod
     def create(**data):
         return Music.objects.create(**data)
 
-    # ========================= LIST =========================
+
     @staticmethod
     def get_all():
         return Music.objects.filter(is_active=True).order_by("-id")
 
-    # ========================= RETRIEVE =========================
+
     @staticmethod
     def get_one(music_id: int):
         return Music.objects.filter(id=music_id, is_active=True).first()
 
-    # ========================= UPDATE =========================
+
     @staticmethod
     def update(music_id: int, **data):
         music = Music.objects.filter(id=music_id, is_active=True).first()
@@ -45,7 +45,7 @@ class Music(models.Model):
         music.save()
         return music
 
-    # ========================= SOFT DELETE =========================
+
     @staticmethod
     def delete_one(music_id: int):
         music = Music.objects.filter(id=music_id, is_active=True).first()
