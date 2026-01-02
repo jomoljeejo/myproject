@@ -14,9 +14,14 @@ from feature.musicapp.serializer.response.music_list import (
 
 class MusicView:
 
-
     def create(self, request):
-        music = Music.create(**request.validated_data)
+        try:
+            music = Music.create(**request.validated_data)
+        except ValueError as e:
+            return Response(
+                Utils.error_response("Invalid data", str(e)),
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         return Response(
             Utils.success_response(
@@ -25,7 +30,6 @@ class MusicView:
             ),
             status=status.HTTP_201_CREATED
         )
-
 
     def list_music(self, request):
         data = request.validated_data
@@ -37,12 +41,15 @@ class MusicView:
 
         try:
             page = paginator.page(page_num)
-            serialized_data = MusicListResponseSerializer.serialize(page)
+            serialized = [
+                MusicListResponseSerializer.serialize(obj)
+                for obj in page
+            ]
         except EmptyPage:
-            serialized_data = []
+            serialized = []
 
         final_data = Utils.add_page_parameter(
-            final_data=serialized_data,
+            final_data=serialized,
             page_num=page_num,
             total_page=paginator.num_pages,
             total_count=paginator.count,
@@ -58,7 +65,6 @@ class MusicView:
             status=status.HTTP_200_OK
         )
 
-
     def retrieve(self, request):
         music_id = self._get_music_id(request)
         if isinstance(music_id, Response):
@@ -67,10 +73,7 @@ class MusicView:
         music = Music.get_one(music_id)
         if not music:
             return Response(
-                Utils.error_response(
-                    "Music not found",
-                    f"id {music_id} does not exist"
-                ),
+                Utils.error_response("Music not found"),
                 status=status.HTTP_200_OK
             )
 
@@ -82,19 +85,25 @@ class MusicView:
             status=status.HTTP_200_OK
         )
 
-
     def update(self, request):
         music_id = self._get_music_id(request)
         if isinstance(music_id, Response):
             return music_id
 
-        music = Music.update(music_id, **request.validated_data)
+        data = request.validated_data.copy()
+        data.pop("tableCode", None)
+
+        try:
+            music = Music.update(music_id, **data)
+        except ValueError as e:
+            return Response(
+                Utils.error_response("Invalid data", str(e)),
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         if not music:
             return Response(
-                Utils.error_response(
-                    "Music not found",
-                    f"id {music_id} does not exist"
-                ),
+                Utils.error_response("Music not found"),
                 status=status.HTTP_200_OK
             )
 
@@ -106,7 +115,6 @@ class MusicView:
             status=status.HTTP_200_OK
         )
 
-
     def delete(self, request):
         music_id = self._get_music_id(request)
         if isinstance(music_id, Response):
@@ -115,10 +123,7 @@ class MusicView:
         success = Music.delete_one(music_id)
         if not success:
             return Response(
-                Utils.error_response(
-                    "Music not found",
-                    f"id {music_id} does not exist"
-                ),
+                Utils.error_response("Music not found"),
                 status=status.HTTP_200_OK
             )
 
@@ -129,17 +134,12 @@ class MusicView:
             status=status.HTTP_200_OK
         )
 
-
     def _get_music_id(self, request):
-        """
-        Extracts and validates music id from validated tableCode.
-        Expected format: MUSIC-<id>
-        """
         table_code = request.validated_data.get("tableCode")
 
         try:
             return int(table_code.split("-")[-1])
-        except (ValueError, AttributeError):
+        except Exception:
             return Response(
                 Utils.error_response(
                     "Invalid tableCode format",

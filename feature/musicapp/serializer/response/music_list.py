@@ -1,11 +1,11 @@
-from .music_detail import MusicDetailResponseSerializer
-
-
 class MusicListResponseSerializer:
 
     @staticmethod
-    def serialize(queryset):
-        return [
-            MusicDetailResponseSerializer.serialize(obj)
-            for obj in queryset
-        ]
+    def serialize(music):
+        return {
+            "tableCode": f"MUSIC-{music.id}",
+            "title": music.title,
+            "artist": music.artist.name if music.artist else None,
+            "album": music.album,
+            "genre": music.genre,
+        }

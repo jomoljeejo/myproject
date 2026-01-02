@@ -1,7 +1,8 @@
+
+
 from rest_framework import serializers
 
-
-class ListMusicRequestSerializer(serializers.Serializer):
+class ListArtistRequestSerializer(serializers.Serializer):
     page_num = serializers.IntegerField(
         min_value=1,
         required=False,

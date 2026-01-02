@@ -1,14 +1,11 @@
 from dataclasses import dataclass
 from typing import Optional
 
-
 @dataclass
-class MusicDetailResponse:
+class ArtistDetailResponse:
     tableName: str
     tableCode: str
-    artist: str
-    album: Optional[str]
-    genre: Optional[str]
+    country: Optional[str]
     createdDateTime: str
     isActive: bool
     createdBy: Optional[str]
@@ -16,4 +13,5 @@ class MusicDetailResponse:
     createdByCode: Optional[str]
     createdBranchCode: Optional[str]
 
-
+    class Meta:
+        table_name = "artistapp"

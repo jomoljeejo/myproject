@@ -1,16 +1,11 @@
-class MusicDetailResponseSerializer:
+class ArtistDetailResponseSerializer:
 
     @staticmethod
     def serialize(obj):
         return {
-            "tableName": obj.title,
-            "tableCode": f"MUSIC-{obj.id}",
-
-
-            "artist": obj.artist.name,
-
-            "album": obj.album,
-            "genre": obj.genre,
+            "tableName": obj.name,
+            "tableCode": f"ARTIST-{obj.artist_id}",
+            "country": obj.country,
             "createdDateTime": obj.created_at,
             "isActive": obj.is_active,
             "createdBy": "System",
