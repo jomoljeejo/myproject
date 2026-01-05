@@ -17,12 +17,46 @@ class Artist(models.Model):
 
 
     @staticmethod
+    def create_artist(name: str, country: str = None):
+
+        return Artist.objects.create(
+            name=name,
+            country=country
+        )
+
+    @staticmethod
+    def get_by_id(artist_id: int):
+        return Artist.objects.filter(
+            artist_id=artist_id,
+            is_active=True
+        ).first()
+
+    @staticmethod
     def get_by_name(name: str):
-        return Artist.objects.filter(name=name, is_active=True).first()
+        return Artist.objects.filter(
+            name=name,
+            is_active=True
+        ).first()
+
 
     @staticmethod
     def get_all():
-        return Artist.objects.filter(is_active=True).order_by("-artist_id")
+        return Artist.objects.filter(
+            is_active=True
+        ).order_by("-artist_id")
+
+
+    @staticmethod
+    def update_artist(artist_id: int, name: str, country: str = None):
+        artist = Artist.get_by_id(artist_id)
+        if not artist:
+            return None
+
+        artist.name = name
+        artist.country = country
+        artist.save()
+        return artist
+
 
     @staticmethod
     def deactivate(artist_id: int):

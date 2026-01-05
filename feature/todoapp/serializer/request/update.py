@@ -7,7 +7,7 @@ class UpdateTodoSerializer(serializers.Serializer):
     is_done = serializers.BooleanField(required=False)
 
     def validate(self, attrs):
-        if len(attrs) == 1:  # only id provided
+        if len(attrs) == 1:
             raise serializers.ValidationError(
                 "At least one field must be provided for update."
             )

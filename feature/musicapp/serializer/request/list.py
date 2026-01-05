@@ -1,5 +1,5 @@
 from rest_framework import serializers
-
+from feature.musicapp.dataclass.request.list import ListMusicRequest
 
 class ListMusicRequestSerializer(serializers.Serializer):
     page_num = serializers.IntegerField(
@@ -13,3 +13,8 @@ class ListMusicRequestSerializer(serializers.Serializer):
         default=10
     )
 
+    def create(self, validated_data):
+        return ListMusicRequest(
+            page_num=validated_data.get("page_num", 1),
+            limit=validated_data.get("limit", 10)
+        )

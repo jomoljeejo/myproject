@@ -2,7 +2,5 @@ from dataclasses import dataclass
 
 @dataclass
 class DeleteArtistRequest:
-    tableCode: str
+    artist_id: int
 
-    class Meta:
-        table_name = "artistapp"

@@ -3,6 +3,7 @@ from rest_framework import status
 from django.core.paginator import Paginator, EmptyPage
 
 from feature.common.utilities import Utils
+from feature.common.common import Common
 from feature.musicapp.models.model import Music
 from feature.musicapp.serializer.response.music_detail import (
     MusicDetailResponseSerializer
@@ -14,22 +15,17 @@ from feature.musicapp.serializer.response.music_list import (
 
 class MusicView:
 
+    @Common(
+        response_handler=MusicDetailResponseSerializer,
+        message="Music created successfully",
+        status_code=status.HTTP_201_CREATED
+    ).exception_handler
     def create(self, request):
         try:
-            music = Music.create(**request.validated_data)
+            return Music.create(**request.validated_data)
         except ValueError as e:
-            return Response(
-                Utils.error_response("Invalid data", str(e)),
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise ValueError(str(e))
 
-        return Response(
-            Utils.success_response(
-                message="Music created successfully",
-                data=MusicDetailResponseSerializer.serialize(music)
-            ),
-            status=status.HTTP_201_CREATED
-        )
 
     def list_music(self, request):
         data = request.validated_data
@@ -65,6 +61,11 @@ class MusicView:
             status=status.HTTP_200_OK
         )
 
+
+    @Common(
+        response_handler=MusicDetailResponseSerializer,
+        message="Music fetched successfully"
+    ).exception_handler
     def retrieve(self, request):
         music_id = self._get_music_id(request)
         if isinstance(music_id, Response):
@@ -72,19 +73,14 @@ class MusicView:
 
         music = Music.get_one(music_id)
         if not music:
-            return Response(
-                Utils.error_response("Music not found"),
-                status=status.HTTP_200_OK
-            )
+            raise ValueError("Music not found")
 
-        return Response(
-            Utils.success_response(
-                message="Music fetched successfully",
-                data=MusicDetailResponseSerializer.serialize(music)
-            ),
-            status=status.HTTP_200_OK
-        )
+        return music
 
+    @Common(
+        response_handler=MusicDetailResponseSerializer,
+        message="Music updated successfully"
+    ).exception_handler
     def update(self, request):
         music_id = self._get_music_id(request)
         if isinstance(music_id, Response):
@@ -96,25 +92,16 @@ class MusicView:
         try:
             music = Music.update(music_id, **data)
         except ValueError as e:
-            return Response(
-                Utils.error_response("Invalid data", str(e)),
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise ValueError(str(e))
 
         if not music:
-            return Response(
-                Utils.error_response("Music not found"),
-                status=status.HTTP_200_OK
-            )
+            raise ValueError("Music not found")
 
-        return Response(
-            Utils.success_response(
-                message="Music updated successfully",
-                data=MusicDetailResponseSerializer.serialize(music)
-            ),
-            status=status.HTTP_200_OK
-        )
+        return music
 
+    @Common(
+        message="Music deleted successfully"
+    ).exception_handler
     def delete(self, request):
         music_id = self._get_music_id(request)
         if isinstance(music_id, Response):
@@ -122,17 +109,9 @@ class MusicView:
 
         success = Music.delete_one(music_id)
         if not success:
-            return Response(
-                Utils.error_response("Music not found"),
-                status=status.HTTP_200_OK
-            )
+            raise ValueError("Music not found")
 
-        return Response(
-            Utils.success_response(
-                message="Music deleted successfully"
-            ),
-            status=status.HTTP_200_OK
-        )
+        return {}
 
     def _get_music_id(self, request):
         table_code = request.validated_data.get("tableCode")

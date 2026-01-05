@@ -6,5 +6,4 @@ class CreateArtistRequest:
     tableName: str
     country: Optional[str] = None
 
-    class Meta:
-        table_name = "artistapp"
+

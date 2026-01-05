@@ -1,12 +1,9 @@
 from dataclasses import dataclass
 from typing import Optional
 
-
 @dataclass
 class CreateMusicRequest:
-    tableName: str
+    title: str
     artist: str
     album: Optional[str] = None
-    genre: Optional[str] = None
-
-
+    duration: Optional[int] = None

@@ -5,9 +5,7 @@ from urllib.parse import unquote
 
 
 class Utils:
-    """
-    Common response utility for the entire project
-    """
+
 
 
     @staticmethod
@@ -73,9 +71,7 @@ class Utils:
 
     @staticmethod
     def get_query_params(request) -> Dict[str, str]:
-        """
-        Extract query parameters safely from request
-        """
+
         try:
             url = request.get_full_path()
         except Exception:

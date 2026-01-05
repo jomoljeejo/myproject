@@ -12,6 +12,3 @@ class ArtistDetailResponse:
     createdBranch: Optional[str]
     createdByCode: Optional[str]
     createdBranchCode: Optional[str]
-
-    class Meta:
-        table_name = "artistapp"

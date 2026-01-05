@@ -2,7 +2,6 @@ from dataclasses import dataclass
 
 @dataclass
 class RetrieveArtistRequest:
-    tableCode: str   # ARTIST-<id>
+    artist_id: int
 
-    class Meta:
-        table_name = "artistapp"
+

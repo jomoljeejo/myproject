@@ -3,8 +3,6 @@ from typing import Optional
 
 @dataclass
 class UpdateArtistRequest:
-    tableName: Optional[str] = None
+    artist_id: int
+    name: str
     country: Optional[str] = None
-
-    class Meta:
-        table_name = "artistapp"
