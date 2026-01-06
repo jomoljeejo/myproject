@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'feature.todoapp',
     'feature.musicapp',
-    "feature.artistapp"
+    'feature.artistapp',
+    'drf_spectacular',
 
 ]
 
@@ -125,3 +126,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}

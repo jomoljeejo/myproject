@@ -25,7 +25,7 @@ class ArtistView:
         status_code=status.HTTP_201_CREATED
     ).exception_handler
     def create(self, request):
-        data = request.validated_data  # CreateArtistRequest DTO
+        data = request.validated_data
 
         return Artist.create_artist(
             name=data.tableName,
